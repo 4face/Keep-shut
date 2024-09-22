@@ -5,7 +5,6 @@ public class InputManager : MonoBehaviour
 {
     private CharacterControls characterControls;
     private static InputManager _instance;
-
     public static InputManager Instance
     {
         get{ return _instance; }
@@ -44,8 +43,12 @@ public class InputManager : MonoBehaviour
     {
         return characterControls.Character.Jump.triggered;    
     }
-    public bool PlayerIntectedThisFrame()
+    public bool PlayerInteractedThisFrame()
     {
         return characterControls.Character.Interact.triggered;
+    }
+    public bool PlayerRanThisFrame()
+    {
+        return characterControls.Character.Run.IsPressed();
     }
 }

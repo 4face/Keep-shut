@@ -1,96 +1,86 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using UnityEditor.Rendering;
-using System.Linq;
-using System;
+using Ink.Runtime;
 
+/// <summary>
+///  Controller for do dialogues.
+/// </summary>
 public class DialogueController : MonoBehaviour
 {
-    public TextMeshProUGUI textComp;
-    public string[] lines;
-    public string[] questions;
-    public bool InProgress = false;
-    [SerializeField] private float textSpeed;
+    [Header("UI Objects")]
+    [SerializeField] private GameObject dialoguePanel;
+    [SerializeField] private TextMeshProUGUI dialogueText;
 
-    private int index;
-    private int indexQuestion;
-    //void Start()
-    //{
-    //    textComp.text = string.Empty;
-    //    StartDialogue();
-    //}
-    void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            if (index >= 0 && index < lines.Length && textComp.text == lines[index])
-            {
-                textComp.text = string.Empty;
-                NextLine(lines);
-            }
-            // Проверяем, что indexQuestion находится в допустимых границах массива questions
-            else if (indexQuestion >= 0 && indexQuestion < questions.Length && textComp.text == questions[indexQuestion])
-            {
-                textComp.text = string.Empty;
-                NextLine(lines); // Возможно, здесь должен быть вызов NextLine(questions)
-            }
-            else
-            {
-                textComp.text = string.Empty;
-                StopAllCoroutines();
-                textComp.text = lines[index];
-            }
-        }   
-    }
-    public void StartDialogue()
-    {
-        InProgress = true;
-        index = 0;
-        indexQuestion = 0;
-        StartCoroutine(TypeLine(lines,index));
-    }
-    public void StartQuestion(string[] textQuestion)
-    {
-        int indexOfNextQuestion = Array.FindIndex(lines, line => line == "<>");
+    private CharacterControl characterControl;
+    private Story currentStory;
+    [Header("Bool handle")]
+    public bool isPlaying;
 
-        if (indexOfNextQuestion != -1)
-        {
-            List<string> tempList = lines.ToList();
-            tempList.RemoveAt(indexOfNextQuestion);
-            lines = tempList.ToArray();
-        }
-        index++;
-        StartCoroutine(TypeLine(textQuestion, indexQuestion));
-        indexQuestion++;
-    }
-    IEnumerator TypeLine(string[] text, int index)
-    {
-        foreach (char i in text[index].ToCharArray())
-        {
-            textComp.text += i;
+    private static DialogueController instance;
 
-            yield return new WaitForSeconds(textSpeed);
+    private void Awake()
+    {
+        if (instance == null)
+        {
+            instance = this;
         }
     }
-    private void NextLine(string[] text)
+
+    public static DialogueController GetInstance()
     {
-        if (index < text.Length - 1 && text[index + 1] == "<>")
+        return instance;
+    }
+
+    private void Start()
+    {
+        isPlaying = false;
+        dialoguePanel.SetActive(false);
+        characterControl = CharacterControl.GetInstance();
+    }
+
+    private void Update()
+    {
+        if (isPlaying && Input.GetMouseButtonUp(0))
         {
-            StartQuestion(questions);
-            textComp.text += string.Empty;
+            ContinueStory();
         }
-        else if(index < text.Length - 1)
+    }
+
+    /// <summary>
+    /// Start dialogue with using JSON-data.
+    /// </summary>
+    /// <param name="inkJSON">JSON-file of dialogue.</param>
+    public void EnterDialogue(TextAsset inkJSON)
+    {
+        currentStory = new Story(inkJSON.text);
+        isPlaying = true;
+        dialoguePanel.SetActive(true);
+        ContinueStory();
+    }
+
+    /// <summary>
+    /// Continue dialogue or finish it, if story ended.
+    /// </summary>
+    private void ContinueStory()
+    {
+        if (currentStory.canContinue)
         {
-            index++;
-            textComp.text += string.Empty;
-            StartCoroutine(TypeLine(text, index));
+            dialogueText.text = currentStory.Continue();
         }
         else
         {
-            InProgress = false;
-            gameObject.SetActive(false);
+            ExitDialogue();
         }
+    }
+
+    /// <summary>
+    /// Finish dialogue.
+    /// </summary>
+    private void ExitDialogue()
+    {
+        isPlaying = false;
+        dialoguePanel.SetActive(false);
+        dialogueText.text = "";
+        Cursor.visible = false;
     }
 }
