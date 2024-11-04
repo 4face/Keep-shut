@@ -1,3 +1,4 @@
+using Ink.UnityIntegration;
 using System;
 using UnityEngine;
 
@@ -89,6 +90,11 @@ public class CharacterControl : MonoBehaviour
             staminaBar.RegenerateStamina();
         }
         else if(!inputManager.PlayerRanThisFrame() && move.magnitude < 0.1f)
+        {
+            playerStatements = 0;
+            staminaBar.RegenerateStamina();
+        }
+        else if(inputManager.PlayerRanThisFrame() && move.magnitude < 0.1f)
         {
             playerStatements = 0;
             staminaBar.RegenerateStamina();
